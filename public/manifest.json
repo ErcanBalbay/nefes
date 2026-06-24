@@ -1,0 +1,18 @@
+{
+  "name": "Nefes — Nefes Egzersizleri",
+  "short_name": "Nefes",
+  "description": "Sakinleşmek, enerji bulmak ve odaklanmak için nefes egzersizleri.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0e1a",
+  "theme_color": "#0b0e1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
