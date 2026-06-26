@@ -1,4 +1,4 @@
-const STORAGE_KEY = "nefes-streak";
+import { createClient } from "@/lib/supabase/client";
 
 type StreakData = {
   count: number;
@@ -14,34 +14,57 @@ function daysBetween(a: string, b: string): number {
   return Math.round((new Date(b).getTime() - new Date(a).getTime()) / msPerDay);
 }
 
-export function getStreak(): StreakData {
-  if (typeof window === "undefined") return { count: 0, lastCompletedDate: null };
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { count: 0, lastCompletedDate: null };
-    return JSON.parse(raw) as StreakData;
-  } catch {
-    return { count: 0, lastCompletedDate: null };
+function computeStreak(completedDates: string[]): StreakData {
+  if (completedDates.length === 0) return { count: 0, lastCompletedDate: null };
+
+  const uniqueDatesDesc = Array.from(new Set(completedDates)).sort().reverse();
+  let count = 1;
+  for (let i = 0; i < uniqueDatesDesc.length - 1; i++) {
+    if (daysBetween(uniqueDatesDesc[i + 1], uniqueDatesDesc[i]) === 1) {
+      count++;
+    } else {
+      break;
+    }
   }
+
+  return { count, lastCompletedDate: uniqueDatesDesc[0] };
 }
 
-export function recordCompletion(): StreakData {
-  const current = getStreak();
-  const today = todayKey();
+export async function getStreak(): Promise<StreakData> {
+  const supabase = createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return { count: 0, lastCompletedDate: null };
 
-  if (current.lastCompletedDate === today) {
-    return current;
+  const { data, error } = await supabase
+    .from("breathing_sessions")
+    .select("completed_at")
+    .eq("user_id", userData.user.id);
+
+  if (error || !data) return { count: 0, lastCompletedDate: null };
+
+  const dates = data.map((row) => row.completed_at.slice(0, 10));
+  return computeStreak(dates);
+}
+
+export async function recordCompletion(techniqueId: string): Promise<StreakData> {
+  const supabase = createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return { count: 0, lastCompletedDate: null };
+
+  const today = todayKey();
+  const { data: existing } = await supabase
+    .from("breathing_sessions")
+    .select("id")
+    .eq("user_id", userData.user.id)
+    .gte("completed_at", `${today}T00:00:00.000Z`)
+    .lte("completed_at", `${today}T23:59:59.999Z`)
+    .limit(1);
+
+  if (!existing || existing.length === 0) {
+    await supabase
+      .from("breathing_sessions")
+      .insert({ user_id: userData.user.id, technique_id: techniqueId });
   }
 
-  const isConsecutive =
-    current.lastCompletedDate !== null &&
-    daysBetween(current.lastCompletedDate, today) === 1;
-
-  const next: StreakData = {
-    count: isConsecutive ? current.count + 1 : 1,
-    lastCompletedDate: today,
-  };
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  return next;
+  return getStreak();
 }
