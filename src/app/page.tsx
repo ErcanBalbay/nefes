@@ -6,10 +6,12 @@ import { techniques, type Technique } from "@/lib/techniques";
 import { getGreeting, getTimeOfDay } from "@/lib/timeOfDay";
 import { getStreak, recordCompletion } from "@/lib/streak";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useTheme } from "@/hooks/useTheme";
 import { GreetingBanner } from "@/components/GreetingBanner";
 import { StreakBadge } from "@/components/StreakBadge";
 import { TechniqueCard } from "@/components/TechniqueCard";
 import { TechniqueSession } from "@/components/TechniqueSession";
+import { ThemeSelector } from "@/components/ThemeSelector";
 import { UserMenu } from "@/components/UserMenu";
 
 export default function Home() {
@@ -17,6 +19,7 @@ export default function Home() {
   const [activeTechnique, setActiveTechnique] = useState<Technique | null>(null);
   const [timeOfDay] = useState<ReturnType<typeof getTimeOfDay>>(() => getTimeOfDay());
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { theme, changeTheme } = useTheme();
 
   useEffect(() => {
     getStreak().then((streak) => setStreakCount(streak.count));
@@ -47,6 +50,7 @@ export default function Home() {
         <div className="flex flex-col items-end gap-2">
           <UserMenu />
           <StreakBadge count={streakCount} />
+          <ThemeSelector current={theme} onChange={changeTheme} />
         </div>
       </div>
 

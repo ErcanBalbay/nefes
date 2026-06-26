@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* Dark tema (default) */
 :root {
   --background: #0b0e1a;
   --background-elevated: #131a2e;
@@ -7,6 +8,18 @@
   --muted: #8b92b3;
   --accent: #7c9eff;
   --border: #232a45;
+  color-scheme: dark;
+}
+
+/* Light tema */
+[data-theme="light"] {
+  --background: #f4f6ff;
+  --background-elevated: #ffffff;
+  --foreground: #1a1f3a;
+  --muted: #5c6490;
+  --accent: #4a6ef5;
+  --border: #dde1f0;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -18,10 +31,6 @@
   --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-html {
-  color-scheme: dark;
 }
 
 body {
