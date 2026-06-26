@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { techniques, type Technique } from "@/lib/techniques";
 import { getGreeting, getTimeOfDay } from "@/lib/timeOfDay";
 import { getStreak, recordCompletion } from "@/lib/streak";
+import { useFavorites } from "@/hooks/useFavorites";
 import { GreetingBanner } from "@/components/GreetingBanner";
 import { StreakBadge } from "@/components/StreakBadge";
 import { TechniqueCard } from "@/components/TechniqueCard";
@@ -15,6 +16,7 @@ export default function Home() {
   const [streakCount, setStreakCount] = useState(0);
   const [activeTechnique, setActiveTechnique] = useState<Technique | null>(null);
   const [timeOfDay] = useState<ReturnType<typeof getTimeOfDay>>(() => getTimeOfDay());
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   useEffect(() => {
     getStreak().then((streak) => setStreakCount(streak.count));
@@ -22,6 +24,16 @@ export default function Home() {
 
   const recommended =
     techniques.find((t) => t.recommendedFor.includes(timeOfDay)) ?? techniques[0];
+
+  const sortedTechniques = useMemo(
+    () => [...techniques].sort((a, b) => {
+      const af = isFavorite(a.id) ? 0 : 1;
+      const bf = isFavorite(b.id) ? 0 : 1;
+      return af - bf;
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [techniques, isFavorite]
+  );
 
   async function handleComplete(technique: Technique) {
     const streak = await recordCompletion(technique.id);
@@ -39,12 +51,14 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {techniques.map((technique) => (
+        {sortedTechniques.map((technique) => (
           <TechniqueCard
             key={technique.id}
             technique={technique}
             isRecommended={technique.id === recommended.id}
+            isFavorite={isFavorite(technique.id)}
             onSelect={() => setActiveTechnique(technique)}
+            onToggleFavorite={() => toggleFavorite(technique.id)}
           />
         ))}
       </div>
@@ -53,6 +67,7 @@ export default function Home() {
         {activeTechnique && (
           <TechniqueSession
             technique={activeTechnique}
+            streakCount={streakCount}
             onClose={() => setActiveTechnique(null)}
             onComplete={() => handleComplete(activeTechnique)}
           />

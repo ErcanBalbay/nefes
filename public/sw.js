@@ -1,4 +1,4 @@
-const CACHE_NAME = "nefes-shell-v1";
+const CACHE_NAME = "nefes-shell-v2";
 const APP_SHELL = ["/", "/manifest.json", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -17,6 +17,8 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  // Ses dosyalarını SW cache'den bypass et — Range request uyumluluğu için
+  if (event.request.url.includes("/audio/")) return;
 
   event.respondWith(
     caches.match(event.request).then(
