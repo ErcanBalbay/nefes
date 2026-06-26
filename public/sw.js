@@ -17,8 +17,10 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  // Ses dosyalarını SW cache'den bypass et — Range request uyumluluğu için
+  // Ses dosyaları ve HTML navigation'ları SW dışında bırak
+  // — HTML'yi intercept etmek auth redirect'lerini bozar (Safari WebKitInternal:0)
   if (event.request.url.includes("/audio/")) return;
+  if (event.request.mode === "navigate") return;
 
   event.respondWith(
     caches.match(event.request).then(
@@ -26,6 +28,8 @@ self.addEventListener("fetch", (event) => {
         cached ||
         fetch(event.request)
           .then((response) => {
+            // redirect response'ları cache'leme
+            if (!response.ok || response.redirected) return response;
             const copy = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
             return response;
