@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 export type SoundKey = "rain" | "forest" | "ocean" | "none";
 
@@ -18,34 +18,30 @@ function loadPreference(): SoundKey {
 export function useAudio() {
   const [sound, setSound] = useState<SoundKey>(loadPreference);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // ref ile stale closure sorunu önlenir
+  const soundRef = useRef<SoundKey>(sound);
+  soundRef.current = sound;
 
-  // ses değişince yeni Audio instance hazırla
-  useEffect(() => {
+  function changeSound(key: SoundKey) {
+    localStorage.setItem(STORAGE_KEY, key);
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
-    if (sound === "none") return;
-
-    const audio = new Audio(SOUND_PATHS[sound]);
-    audio.loop = true;
-    audio.volume = 0.35;
-    audioRef.current = audio;
-
-    return () => {
-      audio.pause();
-      audioRef.current = null;
-    };
-  }, [sound]);
-
-  function changeSound(key: SoundKey) {
-    localStorage.setItem(STORAGE_KEY, key);
     setSound(key);
   }
 
-  // iOS'ta play() mutlaka kullanıcı gesture handler içinde çağrılmalı
   function play() {
-    audioRef.current?.play().catch(() => {});
+    const current = soundRef.current;
+    if (current === "none") return;
+    // iOS: Audio elementi gesture handler içinde yaratılmalı
+    if (!audioRef.current) {
+      const a = new Audio(SOUND_PATHS[current]);
+      a.loop = true;
+      a.volume = 0.35;
+      audioRef.current = a;
+    }
+    audioRef.current.play().catch(() => {});
   }
 
   function pause() {

@@ -47,11 +47,6 @@ export function TechniqueSession({
     }
   }, [session.isComplete]);
 
-  // ses duraklat/devam
-  useEffect(() => {
-    if (!session.isRunning) audio.pause();
-  }, [session.isRunning]);
-
   function handleStart() {
     session.start();
     audio.play();
